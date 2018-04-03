@@ -465,6 +465,49 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 <div class="title">Figure 2. Imagem Final</div>
 </div>
+<div class="listingblock">
+<div class="title">Código Final 2.2.1</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-C++ hljs" data-lang="C++">#include &lt;iostream&gt;
+#include &lt;opencv2/opencv.hpp&gt;
+
+using namespace cv;
+using namespace std;
+
+int main(int, char**){
+  Mat image;
+
+
+  Vec3b val;
+  int heigh,lenght;
+  int x1,x2,y1,y2;
+
+  image= imread("biel.png",CV_LOAD_IMAGE_GRAYSCALE);
+  namedWindow("janela",WINDOW_AUTOSIZE);
+  if(!image.data){
+    cout &lt;&lt; "nao abriu bolhas.png" &lt;&lt; endl;
+  }
+  lenght=image.cols;
+  heigh=image.rows;
+
+  cout &lt;&lt;"numero de linhas "&lt;&lt; heigh &lt;&lt; endl;
+  cout &lt;&lt;"numero de colunas "&lt;&lt; lenght &lt;&lt; endl;
+  cout &lt;&lt;"Entre com coordenadas para o primeiro ponto (x1 seguido de  y1) : "&lt;&lt; endl;
+  cin&gt;&gt;x1;
+  cin&gt;&gt;y1;
+  cout &lt;&lt;"Entre com coordenadas para o segundo ponto (x2 seguido de  y2) : "&lt;&lt; endl;
+  cin&gt;&gt;x2;
+  cin&gt;&gt;y2;
+
+  for (int i =x1; i &lt; x2; i++){
+      for (int j =y1; j &lt; y2; j++){
+            image.at&lt;uchar&gt;(i,j) = 255 - image.at&lt;uchar&gt;(i,j);
+      }
+  }
+  imwrite("bielNegativo.png", image);
+}</code></pre>
+</div>
+</div>
 </div>
 <div class="sect3">
 <h4 id="_2_trocar_regioes_de_uma_imagem">2. Trocar Regioes de uma imagem</h4>
@@ -494,527 +537,703 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 <div class="title">Figure 4. Imagem Final</div>
 </div>
+<div class="listingblock">
+<div class="title">Código Final 2.2.2</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-C++ hljs" data-lang="C++">#include &lt;iostream&gt;
+#include &lt;opencv2/opencv.hpp&gt;
+
+using namespace cv;
+
+int main(int, char**){
+  Mat image;
+  Vec3b val;
+  int heigh,lenght;
+
+  image= imread("biel.png",CV_LOAD_IMAGE_GRAYSCALE);
+  namedWindow("janela",WINDOW_AUTOSIZE);
+  if(!image.data){
+    std::cout &lt;&lt; "nao abriu biel.png" &lt;&lt; std::endl;
+  }
+  lenght=image.cols;
+  heigh=image.rows;
+  std::cout &lt;&lt;"numero de linhas "&lt;&lt; heigh &lt;&lt; std::endl;
+  std::cout &lt;&lt;"numero de colunas "&lt;&lt; lenght &lt;&lt; std::endl;
+
+  for (int i =0; i &lt; heigh; i++){
+      for (int j =0; j &lt; lenght; j++){
+          if(i&lt;(heigh/2)&amp;&amp;j&lt;(lenght/2)){
+            uchar temp = image.at&lt;uchar&gt;(i+(lenght/2),j+(heigh/2));
+            image.at&lt;uchar&gt;(i+(lenght/2),j+(heigh/2)) = image.at&lt;uchar&gt;(i,j);
+            image.at&lt;uchar&gt;(i,j) = temp;
+          }
+          if(i&gt;(heigh/2) &amp;&amp;j&lt;(lenght/2)){
+            uchar temp = image.at&lt;uchar&gt;(i-(lenght/2),j+(heigh/2));
+            image.at&lt;uchar&gt;(i-(lenght/2),j+(heigh/2)) = image.at&lt;uchar&gt;(i,j);
+            image.at&lt;uchar&gt;(i,j) = temp;
+          }
+      }
+  }
+  imwrite("bielTrocado.png", image);
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_converter_o_tipo_da_matriz">Converter o Tipo da matriz.</h4>
+<div class="paragraph">
+<p>Para converter uma matriz do tipo uChar para inteiro, o que resolveria o problema, utilizamos o codigo</p>
+</div>
+<div class="listingblock">
+<div class="title">Código</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-C++ hljs" data-lang="C++">Mat inicial;
+//CV_8UC1 codigo para unsigned char
+inicial.create(2,2,CV_8UC1);
+
+Mat final;
+//CV_32SC1 codigo para Unsigned int
+inicial.convertTo(final, CV_32SC1);
+
+final.at&lt;int&gt;(127,127)=300;</code></pre>
+</div>
+</div>
 </div>
 <div class="sect3">
 <h4 id="_detecção_de_bolhas">Detecção de Bolhas</h4>
-
-</div>
-<div class="sect3">
-<h4 id="_detecção_de_movimentos_da_webcam">Detecção de Movimentos da webcam</h4>
-
-</div>
-<div class="sect3">
-<h4 id="_equalização_de_imagens">Equalização de Imagens</h4>
-
-</div>
-<div class="sect3">
-<h4 id="_proximo_tòpico">proximo tòpico</h4>
-
-</div>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_exemplos_para_copiar_e_colar">Exemplos para copiar e colar</h2>
-<div class="sectionbody">
 <div class="paragraph">
-<p>O objetivo deste arquivo é manter vários códigos que possam ser copiados
-e colados pelo autor durante a produção do texto.</p>
+<p>Primeriamente deveriamos remover todas as bolhas que tocassem as bordas da imagem.
+Para isso, a função removerBolhasBorda foi criada, de forma que ao encontrar um pixel branco, seria executada a função floodFill,
+tornando todos os pontos dessa bolha da cor do fundo da imagem.</p>
+</div>
+<div id="ImagemBolhasInicial" class="imageblock">
+<div class="content">
+<img src="imagens/unidade1/bubble/meuBolha.png" alt="meuBolha">
+</div>
+<div class="title">Figure 5. Imagem Bolhas Inicial</div>
+</div>
+<div class="listingblock">
+<div class="title">removerBolhasBorda</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-C++ hljs" data-lang="C++"> void removerBolhasBorda(Mat m){
+  CvPoint pPrimeiro, pUltimo;
+  int width = m.size().width;
+  int height = m.size().height;
+
+  //Primeira e ultima colunas
+  for(int i = 0; i &lt; height; i++){
+    pPrimeiro.x = 0;
+		pPrimeiro.y = i;
+    floodFill(m, pPrimeiro, 0);
+    pUltimo.x = width - 1;
+		pUltimo.y = i;
+    floodFill(m, pUltimo, 0);
+  }
+  //Primeira e ultima Linhas
+  for(int j = 0; j &lt; width; j++){
+    pPrimeiro.x = j;
+    pPrimeiro.y = height - 1;
+    floodFill(m, pPrimeiro, 0);
+    pUltimo.x = j;
+    pUltimo.y = 0;
+    floodFill(m, pUltimo, 0);
+  }
+}</code></pre>
+</div>
+</div>
+<div id="ImagemSemBordas" class="imageblock">
+<div class="content">
+<img src="imagens/unidade1/bubble/bubblesBorderless.png" alt="bubblesBorderless">
+</div>
+<div class="title">Figure 6. Imagem Sem Bordas</div>
+</div>
+<div class="paragraph">
+<p>Assim, com Apenas as bolhas internas da imagem, utilizou-se o algoritmo de Labeling, para encontrar todas as bolhas.
+Após isso, executou-se o algoritmo floodFill para tornar o fundo da imagem branco.</p>
+</div>
+<div id="ImagemBolhasFundoBranco" class="imageblock">
+<div class="content">
+<img src="imagens/unidade1/bubble/backgrountToWhite.png" alt="backgrountToWhite">
+</div>
+<div class="title">Figure 7. Imagem Com Fundo Branco e etiquetado.</div>
+</div>
+<div class="paragraph">
+<p>O próximo passo é encontrar todos os buracos das bolhas.
+Então executou-se mais uma vez o codigo do Labeling com uma modificação para ao encontrar um buraco de bolha (cor 0),
+deveria-se checar o píxel anterior e caso não seja o fundo da imagem, ele deve incrementar a soma de bolhas com buracos e preencher toda a bolha com a cor branca (255).</p>
+</div>
+<div class="listingblock">
+<div class="title">Contar Bolhas Com Buraco</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-C++ hljs" data-lang="C++">int contarBolhasComBuraco(Mat image){
+  int rows = image.rows;
+  int cols= image.cols;
+  CvPoint p;
+  int nobjects=0;
+  for(int i=0; i&lt;rows; i++){
+    for(int j=0; j&lt;cols; j++){
+      if(image.at&lt;uchar&gt;(i,j) == 0){
+        // achou um objeto
+        if(image.at&lt;uchar&gt;(i,j-1) != 255){
+          p.x=j;
+          p.y=i-1;
+          floodFill(image,p,255);
+          nobjects++;
+        }
+        p.x=j;
+        p.y=i;
+        floodFill(image,p,255);
+      }
+    }
+  }
+
+  return nobjects;
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>O resultado Para a imagem <a href="#ImagemBolhasInicial">Imagem Bolhas Inicial</a> foram três bolhas com Buracos e nenhuma sem Buracos.</p>
+</div>
+<div class="listingblock">
+<div class="title">Codigo Final 3.2.2</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-C++ hljs" data-lang="C++">#include &lt;iostream&gt;
+#include &lt;opencv2/opencv.hpp&gt;
+
+using namespace cv;
+using namespace std;
+
+void removerBolhasBorda(Mat m);
+int contarBolhasComBuraco(Mat image);
+
+int main(int argc, char** argv){
+  Mat image, mask;
+  int width, height;
+  int nobjects;
+
+  CvPoint p;
+  image = imread(argv[1],CV_LOAD_IMAGE_GRAYSCALE);
+
+  if(!image.data){
+    cout &lt;&lt; "imagem nao carregou corretamente\n";
+    return(-1);
+  }
+
+  width=image.size().width;
+    height=image.size().height;
+
+    p.x=0;
+    p.y=0;
+
+    removerBolhasBorda(image);
+    imwrite("bubblesBorderless.png",image);
+
+    // busca objetos com buracos
+    nobjects=0;
+    for(int i=0; i&lt;height; i++){
+      for(int j=0; j&lt;width; j++){
+        if(image.at&lt;uchar&gt;(i,j) == 255){
+      		// achou um objeto
+      		nobjects++;
+      		p.x=j;
+      		p.y=i;
+      		floodFill(image,p,nobjects);
+        }
+  	  }
+    }
+
+  imwrite("labeling.png", image);
+
+  p.x=0;
+  p.y=0;
+  floodFill(image,p,255);
+  imwrite("backgrountToWhite.png", image);
+
+
+  int numeroBolhas = contarBolhasComBuraco(image);
+  cout&lt;&lt;"número de bolhas Sem Buracos : "&lt;&lt; nobjects-numeroBolhas&lt;&lt;endl;
+  cout&lt;&lt;"Número de Bolhas Com Buracos: "&lt;&lt; numeroBolhas&lt;&lt;endl;
+  imwrite("final.png", image);
+
+  return 0;
+}
+
+int contarBolhasComBuraco(Mat image){
+  int rows = image.rows;
+  int cols= image.cols;
+  CvPoint p;
+  int nobjects=0;
+  for(int i=0; i&lt;rows; i++){
+    for(int j=0; j&lt;cols; j++){
+      if(image.at&lt;uchar&gt;(i,j) == 0){
+        // achou um objeto
+        if(image.at&lt;uchar&gt;(i,j-1) != 255){
+          p.x=j;
+          p.y=i-1;
+          floodFill(image,p,255);
+          nobjects++;
+        }
+        p.x=j;
+        p.y=i;
+        floodFill(image,p,255);
+      }
+    }
+  }
+  return nobjects;
+}
+
+void removerBolhasBorda(Mat m){
+  CvPoint pPrimeiro,pUltimo;
+  int width=m.size().width;
+  int height=m.size().height;
+
+  //Primeira e ultima colunas
+  for(int i=0; i&lt;height; i++){
+    pPrimeiro.x=0;
+		pPrimeiro.y=i;
+    floodFill(m,pPrimeiro,0);
+    pUltimo.x=width-1;
+		pUltimo.y=i;
+    floodFill(m,pUltimo,0);
+  }
+  //Primeira e ultima Linhas
+  for(int j=0; j&lt;width; j++){
+    pPrimeiro.x=j;
+    pPrimeiro.y=height-1;
+    floodFill(m,pPrimeiro,0);
+    pUltimo.x=j;
+    pUltimo.y=0;
+    floodFill(m,pUltimo,0);
+  }
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_4_2_1_equalização_de_video">4.2.1 Equalização de video</h4>
+<div class="listingblock">
+<div class="title">Codigo Final 4.2.1</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-C++ hljs" data-lang="C++"></code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_4_2_2_detecção_de_movimentos_da_webcam">4.2.2 Detecção de Movimentos da Webcam</h4>
+<div class="listingblock">
+<div class="title">Codigo Final 4.2.2</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-C++ hljs" data-lang="C++"></code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_5_2_filtro_laplaciano_do_gaussiano">5.2 Filtro Laplaciano do Gaussiano</h4>
+<div class="paragraph">
+<p>Para calcular filtro Laplaciano do Gaussiano basta primeiro executar o filtro laplaciano e em seguida o filtro Gaussiano.
+adicionou-se no código os seguintes trechos.</p>
+</div>
+<div class="listingblock">
+<div class="title">Código para Adicionar a funcionalidade ao menu de opções</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-C++ hljs" data-lang="C++">case 'k':
+  menu();
+  laplgauss=!laplgauss;
+  break;</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Código para instanciar as mascaras e realizar a filtragem.</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-C++ hljs" data-lang="C++">if(laplgauss){
+      mask = Mat(3, 3, CV_32F, laplacian);
+      filter2D(frame32f, frame32f, frame32f.depth(), mask, Point(1,1), 0);
+      mask = Mat(3, 3, CV_32F, gauss);
+      filter2D(frame32f, frameFiltered, frame32f.depth(), mask, Point(1,1), 0);
+}else{
+      filter2D(frame32f, frameFiltered, frame32f.depth(), mask, Point(1,1), 0);
+}</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Código Final 5.2</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-C++ hljs" data-lang="C++">#include &lt;iostream&gt;
+#include &lt;opencv2/opencv.hpp&gt;
+
+using namespace cv;
+using namespace std;
+
+void printmask(Mat &amp;m){
+  for(int i=0; i&lt;m.size().height; i++){
+    for(int j=0; j&lt;m.size().width; j++){
+      cout &lt;&lt; m.at&lt;float&gt;(i,j) &lt;&lt; ",";
+    }
+    cout &lt;&lt; endl;
+  }
+}
+
+void menu(){
+  cout &lt;&lt; "\npressione a tecla para ativar o filtro: \n"
+	"a - calcular modulo\n"
+    "m - media\n"
+    "g - gauss\n"
+    "v - vertical\n"
+	  "h - horizontal\n"
+    "l - laplaciano\n"
+    "k - laplaciano Gaussiano \n"
+	"esc - sair\n";
+}
+
+int main(int argvc, char** argv){
+  VideoCapture video;
+  float media[] = {1,1,1,
+				   1,1,1,
+				   1,1,1};
+  float gauss[] = {1,2,1,
+				   2,4,2,
+				   1,2,1};
+  float horizontal[]={-1,0,1,
+					  -2,0,2,
+					  -1,0,1};
+  float vertical[]={-1,-2,-1,
+					0,0,0,
+					1,2,1};
+  float laplacian[]={0,-1,0,
+					 -1,4,-1,
+					 0,-1,0};
+
+  Mat cap, frame, frame32f, frameFiltered;
+  Mat mask(3,3,CV_32F), mask1;
+  Mat result, result1;
+  double width, height, min, max;
+  int absolut, laplgauss;
+  char key;
+
+  video.open(0);
+  if(!video.isOpened())
+    return -1;
+  width=video.get(CV_CAP_PROP_FRAME_WIDTH);
+  height=video.get(CV_CAP_PROP_FRAME_HEIGHT);
+  std::cout &lt;&lt; "largura=" &lt;&lt; width &lt;&lt; "\n";;
+  std::cout &lt;&lt; "altura =" &lt;&lt; height&lt;&lt; "\n";;
+
+  namedWindow("filtroespacial",1);
+
+  mask = Mat(3, 3, CV_32F, media);
+  scaleAdd(mask, 1/9.0, Mat::zeros(3,3,CV_32F), mask1);
+  swap(mask, mask1);
+  absolut=1; // calcs abs of the image
+
+  menu();
+  for(;;){
+    video &gt;&gt; cap;
+    cvtColor(cap, frame, CV_BGR2GRAY);
+    flip(frame, frame, 1);
+    imshow("original", frame);
+    frame.convertTo(frame32f, CV_32F);
+
+    if(laplgauss){
+      mask = Mat(3, 3, CV_32F, laplacian);
+      filter2D(frame32f, frame32f, frame32f.depth(), mask, Point(1,1), 0);
+      mask = Mat(3, 3, CV_32F, gauss);
+      filter2D(frame32f, frameFiltered, frame32f.depth(), mask, Point(1,1), 0);
+    }else{
+            filter2D(frame32f, frameFiltered, frame32f.depth(), mask, Point(1,1), 0);
+    }
+
+    if(absolut){
+      frameFiltered=abs(frameFiltered);
+    }
+    frameFiltered.convertTo(result, CV_8U);
+    imshow("filtroespacial", result);
+    key = (char) waitKey(10);
+    if( key == 27 ) break; // esc pressed!
+    switch(key){
+    case 'a':
+	  menu();
+      absolut=!absolut;
+      break;
+    case 'm':
+	  menu();
+      laplgauss=0;
+      mask = Mat(3, 3, CV_32F, media);
+      scaleAdd(mask, 1/9.0, Mat::zeros(3,3,CV_32F), mask1);
+      mask = mask1;
+      printmask(mask);
+      break;
+    case 'g':
+	  menu();
+      laplgauss=0;
+      mask = Mat(3, 3, CV_32F, gauss);
+      scaleAdd(mask, 1/16.0, Mat::zeros(3,3,CV_32F), mask1);
+      mask = mask1;
+      printmask(mask);
+      break;
+    case 'h':
+	  menu();
+      laplgauss=0;
+      mask = Mat(3, 3, CV_32F, horizontal);
+      printmask(mask);
+      break;
+    case 'v':
+	  menu();
+      laplgauss=0;
+      mask = Mat(3, 3, CV_32F, vertical);
+      printmask(mask);
+      break;
+    case 'l':
+	  menu();
+      laplgauss=0;
+      mask = Mat(3, 3, CV_32F, laplacian);
+      printmask(mask);
+      break;
+    case 'k':
+  	  menu();
+      laplgauss=!laplgauss;
+      break;
+    default:
+      break;
+    }
+  }
+  return 0;
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_6_1_1_tilt_shift_digital_para_imagens">6.1.1 Tilt Shift Digital para imagens</h4>
+<div class="paragraph">
+<p>Para realizar o efeito dessejado, o processamento consiste em x passsos.</p>
 </div>
 <div class="ulist">
-<div class="title">Links importantes</div>
 <ul>
 <li>
-<p><a href="https://raw.github.com/edusantana/producao-computacao-ead-ufpb/master/estrutura-inicial/livro/capitulos/asciidoc-exemplos.asc">Versão atual deste arquivo</a></p>
+<p>Clonar o frame;</p>
 </li>
 <li>
-<p><a href="https://raw.github.com/edusantana/producao-computacao-ead-ufpb/master/estrutura-inicial/livro/capitulos/asciidoc-syntax.txt">Ajuda da sintaxe do asciidoc</a></p>
+<p>Borrar uma das imagens;</p>
+</li>
+<li>
+<p>aplicar o filtro ponderativo nas duas imagens, para gerar o decaimento;</p>
+</li>
+<li>
+<p>somar as duas imagens.</p>
 </li>
 </ul>
 </div>
-<div class="sect2">
-<h3 id="_imagens">Imagens</h3>
-<div class="imageblock">
+<div class="paragraph">
+<p>O borramento das imagens foi feito aplicando cinco vezes o filtro da media de tamanho(5x5).
+O filtro ponderativo é dado pela função :</p>
+</div>
+<div id="ImagemFormulaPonderacao" class="imageblock">
 <div class="content">
-<img src="images/novo-capitulo/imagem.png" alt="imagem">
+<img src="imagens/unidade1/TiltShift/formula.png" alt="formula">
 </div>
-<div class="title">Figure 5. Imagem30</div>
+<div class="title">Figure 8. Fórmula de ponderação</div>
 </div>
-<div class="imageblock">
+<div class="paragraph">
+<p>Onde x é o valor do eixo x da figura, l1 é o limite superior do decaimento,
+ l2 o limite inferior e d a força do decaimento, o que diz a intensidade da mudança.</p>
+</div>
+<div class="paragraph">
+<p>onde para a imagem borrada, a multiplicação é feita pelo proprio valor da função de ponderação.
+Já na imagem original, multiplica-se pelo complemento da função.</p>
+</div>
+<div class="paragraph">
+<p>A soma resulta nas imagens com o efeito Tilt Shift.</p>
+</div>
+<div id="ImagemOriginalToronto" class="imageblock">
 <div class="content">
-<img src="images/novo-capitulo/imagem.png" alt="imagem">
+<img src="imagens/unidade1/TiltShift/toronto.jpg" alt="toronto">
 </div>
-<div class="title">Figure 6. Imagem60</div>
+<div class="title">Figure 9. Imagem Toronto Original</div>
 </div>
-<div class="imageblock">
+<div id="ImagemToronto1" class="imageblock">
 <div class="content">
-<img src="images/novo-capitulo/imagem.png" alt="imagem">
+<img src="imagens/unidade1/TiltShift/toronto1.png" alt="toronto1">
 </div>
-<div class="title">Figure 7. Imagem80</div>
+<div class="title">Figure 10. Imagem Toronto Processada</div>
 </div>
-<div class="imageblock">
+<div id="ImagemToronto2" class="imageblock">
 <div class="content">
-<img src="images/novo-capitulo/imagem.png" alt="imagem">
+<img src="imagens/unidade1/TiltShift/toronto2.png" alt="toronto2">
 </div>
-<div class="title">Figure 8. Imagem</div>
+<div class="title">Figure 11. Imagem Toronto Processada</div>
 </div>
-</div>
-<div class="sect2">
-<h3 id="_listas">Listas</h3>
-<div class="sect3">
-<h4 id="_lista_rotulada">Lista rotulada</h4>
-<div id="listax" class="dlist">
-<div class="title">Título da lista x</div>
-<dl>
-<dt class="hdlist1">Um</dt>
-<dd>
-<p>Item 1.</p>
-</dd>
-<dt class="hdlist1">Dois</dt>
-<dd>
-<p>Item 2</p>
-</dd>
-<dt class="hdlist1">Três</dt>
-<dd>
-<p>Item 3</p>
-</dd>
-<dt class="hdlist1">Quatro</dt>
-<dd>
-<p>Item 4.</p>
-</dd>
-</dl>
-</div>
-<div class="paragraph">
-<p>Referenciando-a: <a href="#listax">Título da lista x</a>.</p>
-</div>
-<div id="listay" class="dlist">
-<div class="title">Título da lista Y</div>
-<dl>
-<dt class="hdlist1">Um</dt>
-<dd>
-<p>Item 1.</p>
-</dd>
-<dt class="hdlist1">Dois</dt>
-<dd>
-<p>Item 2</p>
-</dd>
-<dt class="hdlist1">Três</dt>
-<dd>
-<p>Item 3</p>
-</dd>
-<dt class="hdlist1">Quatro</dt>
-<dd>
-<p>Item 4.</p>
-</dd>
-</dl>
-</div>
-<div class="paragraph">
-<p>Referenciando-a: <a href="#listay">Minha linda lista Y</a>.</p>
-</div>
-<div id="listazz" class="dlist">
-<div class="title">Lista Z</div>
-<dl>
-<dt class="hdlist1"><a id="zi1"></a>Um</dt>
-<dd>
-<p>Item 1.</p>
-</dd>
-<dt class="hdlist1">Dois</dt>
-<dd>
-<p>Item 2</p>
-</dd>
-<dt class="hdlist1">Três</dt>
-<dd>
-<p>Item 3</p>
-</dd>
-<dt class="hdlist1">Quatro</dt>
-<dd>
-<p>Item 4.</p>
-</dd>
-<dt class="hdlist1"><a id="zi5"></a>Cinco</dt>
-<dd>
-<p>Item 5.</p>
-</dd>
-</dl>
-</div>
-<div class="paragraph">
-<p>Referenciando a lista: <a href="#listazz">Lista Z</a>.
-Referenciando os ítens:  <a href="#zi1">[zi1]</a> e <a href="#zi5">[zi5]</a>.</p>
-</div>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_exemplos">Exemplos</h3>
-<div class="exampleblock">
-<div class="title">Example 1. Título do exemplo</div>
+<div id="ImagemToronto3" class="imageblock">
 <div class="content">
-<div class="paragraph">
-<p>Texto do exemplo.</p>
+<img src="imagens/unidade1/TiltShift/toronto3.png" alt="toronto3">
 </div>
+<div class="title">Figure 12. Imagem Toronto Processada</div>
 </div>
-</div>
-<div class="exampleblock">
-<div class="title">Example 2. &#8203;</div>
-<div class="content">
-<div class="paragraph">
-<p>Exemplo sem título.</p>
-</div>
-</div>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_código_fonte">Código fonte</h3>
-<div class="paragraph">
-<p>faltando.</p>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_tabelas">Tabelas</h3>
-<div class="paragraph">
-<p>Segue exemplos de várias tabelas.</p>
-</div>
-<div class="admonitionblock tip">
-<table>
-<tr>
-<td class="icon">
-<div class="title">Tip</div>
-</td>
-<td class="content">
-Consulte <a href="http://www.methods.co.nz/asciidoc/newtables.html" class="bare">http://www.methods.co.nz/asciidoc/newtables.html</a> para compreender
-a sintaxe das tabelas em asciidoc.
-</td>
-</tr>
-</table>
-</div>
-<div class="sect3">
-<h4 id="_tabelas_com_2_colunas">Tabelas com 2 Colunas</h4>
-<table class="tableblock frame-topbot grid-all" style="width: 40%;">
-<caption class="title">Table 1. Tabela pequena2</caption>
-<colgroup>
-<col style="width: 50%;">
-<col style="width: 50%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Coluna</th>
-<th class="tableblock halign-left valign-top">Coluna</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">A</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">B</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">A</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">B</p></td>
-</tr>
-</tbody>
-</table>
-<table class="tableblock frame-topbot grid-all" style="width: 60%;">
-<caption class="title">Table 2. Tabela média2</caption>
-<colgroup>
-<col style="width: 50%;">
-<col style="width: 50%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Coluna</th>
-<th class="tableblock halign-left valign-top">Coluna</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Coluna</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">A</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">B</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">A</p></td>
-</tr>
-</tbody>
-</table>
-<table class="tableblock frame-topbot grid-all spread">
-<caption class="title">Table 3. Tabela grande2</caption>
-<colgroup>
-<col style="width: 50%;">
-<col style="width: 50%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Coluna</th>
-<th class="tableblock halign-left valign-top">Coluna</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">A</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">B</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">A</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">B</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="sect3">
-<h4 id="_tabelas_com_3_colunas">Tabelas com 3 Colunas</h4>
-<table class="tableblock frame-topbot grid-all" style="width: 40%;">
-<caption class="title">Table 4. Tabela pequena3</caption>
-<colgroup>
-<col style="width: 33.3333%;">
-<col style="width: 33.3333%;">
-<col style="width: 33.3334%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Coluna</th>
-<th class="tableblock halign-left valign-top">Coluna</th>
-<th class="tableblock halign-left valign-top">Coluna</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">A</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">B</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">C</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">A</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">B</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">C</p></td>
-</tr>
-</tbody>
-</table>
-<table class="tableblock frame-topbot grid-all" style="width: 60%;">
-<caption class="title">Table 5. Tabela média3</caption>
-<colgroup>
-<col style="width: 33.3333%;">
-<col style="width: 33.3333%;">
-<col style="width: 33.3334%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Coluna</th>
-<th class="tableblock halign-left valign-top">Coluna</th>
-<th class="tableblock halign-left valign-top">Coluna</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">A</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">B</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">C</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">A</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">B</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">C</p></td>
-</tr>
-</tbody>
-</table>
-<table class="tableblock frame-topbot grid-all spread">
-<caption class="title">Table 6. Tabela grande3</caption>
-<colgroup>
-<col style="width: 33.3333%;">
-<col style="width: 33.3333%;">
-<col style="width: 33.3334%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Coluna</th>
-<th class="tableblock halign-left valign-top">Coluna</th>
-<th class="tableblock halign-left valign-top">Coluna</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">A</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">B</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">C</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">A</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">B</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">C</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="sect3">
-<h4 id="_tabelas_com_4_colunas">Tabelas com 4 Colunas</h4>
-<table class="tableblock frame-topbot grid-all" style="width: 40%;">
-<caption class="title">Table 7. Tabela pequena4</caption>
-<colgroup>
-<col style="width: 25%;">
-<col style="width: 25%;">
-<col style="width: 25%;">
-<col style="width: 25%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Coluna</th>
-<th class="tableblock halign-left valign-top">Coluna</th>
-<th class="tableblock halign-left valign-top">Coluna</th>
-<th class="tableblock halign-left valign-top">Coluna</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">A</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">B</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">C</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">D</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">A</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">B</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">C</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">D</p></td>
-</tr>
-</tbody>
-</table>
-<table class="tableblock frame-topbot grid-all" style="width: 60%;">
-<caption class="title">Table 8. Tabela média4</caption>
-<colgroup>
-<col style="width: 25%;">
-<col style="width: 25%;">
-<col style="width: 25%;">
-<col style="width: 25%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Coluna</th>
-<th class="tableblock halign-left valign-top">Coluna</th>
-<th class="tableblock halign-left valign-top">Coluna</th>
-<th class="tableblock halign-left valign-top">Coluna</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">A</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">B</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">C</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">D</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">A</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">B</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">C</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">D</p></td>
-</tr>
-</tbody>
-</table>
-<table class="tableblock frame-topbot grid-all spread">
-<caption class="title">Table 9. Tabela grande4</caption>
-<colgroup>
-<col style="width: 25%;">
-<col style="width: 25%;">
-<col style="width: 25%;">
-<col style="width: 25%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Coluna</th>
-<th class="tableblock halign-left valign-top">Coluna</th>
-<th class="tableblock halign-left valign-top">Coluna</th>
-<th class="tableblock halign-left valign-top">Coluna</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">A</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">B</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">C</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">D</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">A</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">B</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">C</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">D</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="sect3">
-<h4 id="_tabela_sem_bordas">Tabela sem bordas</h4>
-<table class="tableblock frame-none grid-none spread">
-<colgroup>
-<col style="width: 33.3333%;">
-<col style="width: 33.3333%;">
-<col style="width: 33.3334%;">
-</colgroup>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">aa</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">bb</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">vv</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="sect3">
-<h4 id="_tabela_com_figura_dentro">Tabela com figura dentro</h4>
-<table class="tableblock frame-none grid-none spread">
-<colgroup>
-<col style="width: 33.3333%;">
-<col style="width: 33.3333%;">
-<col style="width: 33.3334%;">
-</colgroup>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="image"><img src="images/novo-capitulo/imagem.png" alt="imagem" width="10%"></span></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">bb</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">vv</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="sect3">
-<h4 id="_tabela_com_fórmula">Tabela com fórmula</h4>
-<div class="paragraph">
-<p>texto.</p>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_tabela_com_listas">Tabela com listas</h4>
-<div class="paragraph">
-<p>texto.</p>
-</div>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_texto_complementar">Texto complementar</h3>
-<table class="tableblock frame-none grid-all spread">
-<colgroup>
-<col style="width: 100%;">
-</colgroup>
-<tbody>
-<tr>
-<td class="tableblock halign-right valign-top"><p class="tableblock">Texto: EDUCAÇÃO E GLOBALIZAÇÃO: Uma tentativa de colocar ordem no debate (Revista de ciências da educação, Lisboa, Nº 04, 2007)</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-right valign-top"><p class="tableblock">Autor: Bernard Charlot</p></td>
-</tr>
-</tbody>
-</table>
-<div class="paragraph">
-<p>Texto complementar vai aqui em baixo.</p>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_comandos">Comandos</h3>
 <div class="listingblock">
-<div class="title">Comando para aumentar a produtividade no linux</div>
+<div class="title">Código Final 6.1.1</div>
 <div class="content">
-<pre>git commit -a -m "mensagem"; git push; curl http://producao.virtual.ufpb.br/cgi-bin/pull-pdf.py?repositorio=`git config --get remote.origin.url`; play ~/beep.mp3</pre>
+<pre class="highlightjs highlight"><code class="language-C++ hljs" data-lang="C++">#include &lt;iostream&gt;
+#include &lt;opencv2/opencv.hpp&gt;
+
+using namespace cv;
+using namespace std;
+
+double alfa;
+int altura_slider = 0;
+int altura_slider_max = 100;
+
+int forca_slider = 0;
+int forca_slider_max = 100;
+
+int centro= 0;
+int height = 100;
+
+int width;
+
+Mat image, blended;
+Mat imagemBorrada;
+
+char TrackbarName[50];
+
+double ponderacao(float x, float l1,float l2, float d){
+  return (tanh ((x-l1)/d) - tanh ((x-l2)/d))/2;
+}
+
+void on_change(int, void*){
+blended = Mat::zeros(image.size(), CV_8UC3);
+ int l1 = centro - altura_slider;
+ int l2 = centro + altura_slider;
+
+ for(int i =0; i&lt;height; i++){
+   addWeighted(image.row(i), ponderacao(i, l1,l2, forca_slider), imagemBorrada.row(i),
+                1-ponderacao(i, l1,l2, forca_slider), 0,blended.row(i));
+ }
+ imshow("addweighted", blended);
+}
+
+int main(int argvc, char** argv){
+
+  image = imread(argv[1], CV_LOAD_IMAGE_COLOR);
+  if(!image.data){
+    std::cout &lt;&lt; "imagem nao carregou corretamente\n";
+    return(-1);
+  }
+
+  image.copyTo(imagemBorrada);
+  for(int i =0; i&lt;5;i++){
+    blur(imagemBorrada,imagemBorrada, Size( 5,5 ));
+  }
+
+  width=image.size().width;
+  height=image.size().height;
+  altura_slider_max = height;
+  namedWindow("addweighted", 1);
+
+  sprintf( TrackbarName, "Altura da area %d", altura_slider_max );
+  createTrackbar( TrackbarName, "addweighted",
+				  &amp;altura_slider,
+				  altura_slider_max,
+				  on_change );
+  on_change(altura_slider, 0 );
+
+  sprintf( TrackbarName, "Força de decaimento x %d", forca_slider_max );
+  createTrackbar( TrackbarName, "addweighted",
+				  &amp;forca_slider,
+				  forca_slider_max,
+				  on_change );
+  on_change(forca_slider, 0 );
+
+  sprintf( TrackbarName, "Posicao do foco x %d", height );
+  createTrackbar( TrackbarName, "addweighted",
+				  &amp;centro,
+				  height,
+				  on_change );
+  on_change(centro, 0 );
+
+  waitKey(0);
+  return 0;
+}</code></pre>
 </div>
 </div>
+</div>
+<div class="sect3">
+<h4 id="_6_1_2_tilt_shift_digital_para_vídeos">6.1.2 Tilt Shift Digital para vídeos</h4>
 <div class="paragraph">
-<p>Mais referencias podem ser consultadas em:
-<a href="http://asciidoctor.org/docs/asciidoc-quick-reference/" class="bare">http://asciidoctor.org/docs/asciidoc-quick-reference/</a>
-<a href="http://asciidoctor.org/docs/asciidoc-writers-guide/" class="bare">http://asciidoctor.org/docs/asciidoc-writers-guide/</a></p>
+<p>Para esse exercicio, utilizou-se o mesmo processamento de imagens do exercicio passado, aplicando-o em cada frame recebido do vídeo.
+o centro do tiltShift foi posicionado na metade da altura, variando 25% da altura da imagem para cima e para baixo do centro.
+Além disso descartou-se 3 a cada 4 quadros para provocar o efeitod e "StopMotion".</p>
+</div>
+<div class="listingblock">
+<div class="title">Código Final 6.1.2</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-C++ hljs" data-lang="C++">#include &lt;iostream&gt;
+#include &lt;opencv2/opencv.hpp&gt;
+
+using namespace cv;
+using namespace std;
+
+double alfa;
+int altura_slider;
+int forca_slider;
+int centro;
+int height;
+int width;
+
+Mat image, blended;
+Mat imagemBorrada;
+
+char TrackbarName[50];
+
+double ponderacao(float x, float l1,float l2, float d){
+  return (tanh ((x-l1)/d) - tanh ((x-l2)/d))/2;
+}
+
+int main(int argvc, char** argv){
+
+  VideoCapture cap("video.avi");
+  VideoWriter videoOutput;
+  videoOutput.open("videoOutput.avi", CV_FOURCC('M','J','P','G'), 15, Size(640,480));
+
+
+while(1){
+    for(int i =0; i&lt;5;i++){
+        cap &gt;&gt; image;
+        if(image.empty()){
+          std::cout &lt;&lt; "O video Acabou";
+          break;
+        }
+     }
+  resize(image,image,Size(640,480));
+  blended = Mat::zeros(image.size(), CV_8UC3);
+  cout&lt;&lt;"teste"&lt;&lt;endl;
+
+
+  width=image.size().width;
+  height=image.size().height;
+
+  centro= height/2;
+  altura_slider = centro/2;
+  forca_slider = 20;
+  namedWindow("addweighted", 1);
+  image.copyTo(imagemBorrada);
+
+  for(int i =0; i&lt;5;i++){
+    blur(imagemBorrada,imagemBorrada, Size( 5,5 ));
+  }
+  blended = Mat::zeros(image.size(), CV_8UC3);
+   int l1 = centro - altura_slider;
+   int l2 = centro + altura_slider;
+
+   for(int i =0 ; i&lt;height ;i++){
+     addWeighted(image.row(i), ponderacao(i, l1,l2, forca_slider), imagemBorrada.row(i),
+                  1-ponderacao(i, l1,l2, forca_slider), 0,blended.row(i));
+   }
+   videoOutput&lt;&lt;blended;
+
+}
+videoOutput.release();
+  return 0;
+}</code></pre>
+</div>
+</div>
 </div>
 </div>
 </div>
@@ -1022,8 +1241,11 @@ a sintaxe das tabelas em asciidoc.
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2018-03-19 18:12:59 -03
+Last updated 2018-04-02 21:57:29 -03
 </div>
 </div>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+<script>hljs.initHighlighting()</script>
 </body>
 </html>
