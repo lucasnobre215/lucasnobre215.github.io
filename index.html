@@ -433,7 +433,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <h2 id="_processamento_digital_de_imagens">Processamento Digital de Imagens</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Lucas Ramalho Nobre</p>
+<p>Aluno: Lucas Ramalho Nobre</p>
 </div>
 <div class="sect2">
 <h3 id="_relatório_de_atividades_unidade_1">Relatório de Atividades Unidade 1</h3>
@@ -811,19 +811,283 @@ void removerBolhasBorda(Mat m){
 </div>
 <div class="sect3">
 <h4 id="_4_2_1_equalização_de_video">4.2.1 Equalização de video</h4>
+<div class="paragraph">
+<p>Para esse exercício, foi utilizada a função do openCV de Equalização de Histogramas. Dessa forma, bastou que o frame, após recebido da câmera,
+fosse dividido entre seus espectros de cor e cada um desse fosse equalizado. Assim, o resultado obtido é que as ocorrências das cores ficam mais
+bem divididas no intervalo de cores disponivies para a representação.</p>
+</div>
 <div class="listingblock">
 <div class="title">Codigo Final 4.2.1</div>
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-C++ hljs" data-lang="C++"></code></pre>
+<pre class="highlightjs highlight"><code class="language-C++ hljs" data-lang="C++">#include &lt;iostream&gt;
+#include &lt;opencv2/opencv.hpp&gt;
+
+using namespace cv;
+using namespace std;
+
+void calcHist(Mat image);
+
+int main(int argc, char** argv){
+  Mat image, imageEqlz;
+  int width, height;
+  VideoCapture cap;
+  vector&lt;Mat&gt;  planesEqlz;
+
+  cap.open(0);
+
+  if(!cap.isOpened()){
+    cout &lt;&lt; "cameras indisponiveis";
+    return -1;
+  }
+
+  while(1){
+    cap &gt;&gt; image;
+    image.copyTo(imageEqlz);
+    calcHist(image);
+
+    imshow("imagemOriginal", image);
+
+    split (imageEqlz, planesEqlz);
+    //equalizar imagem capturada
+    equalizeHist(planesEqlz[0], planesEqlz[0]);
+    equalizeHist(planesEqlz[1], planesEqlz[1]);
+    equalizeHist(planesEqlz[2], planesEqlz[2]);
+    merge(planesEqlz, imageEqlz);
+
+    calcHist(imageEqlz);
+    imshow("imagemEqualizada", imageEqlz);
+
+    if(waitKey(30) &gt;= 0) break;
+  }
+  return 0;
+}
+
+void calcHist(Mat image){
+  vector&lt;Mat&gt; planes;
+  Mat histR, histG, histB;
+  int nbins = 64;
+  float range[] = {0, 256};
+  const float *histrange = { range };
+  bool uniform = true;
+  bool acummulate = false;
+
+  int histw = nbins, histh = nbins/2;
+  Mat histImgR(histh, histw, CV_8UC3, Scalar(0,0,0));
+  Mat histImgG(histh, histw, CV_8UC3, Scalar(0,0,0));
+  Mat histImgB(histh, histw, CV_8UC3, Scalar(0,0,0));
+
+  split(image,planes);
+  calcHist(&amp;planes[0], 1, 0, Mat(), histR, 1,
+           &amp;nbins, &amp;histrange,
+           uniform, acummulate);
+  calcHist(&amp;planes[1], 1, 0, Mat(), histG, 1,
+           &amp;nbins, &amp;histrange,
+           uniform, acummulate);
+  calcHist(&amp;planes[2], 1, 0, Mat(), histB, 1,
+           &amp;nbins, &amp;histrange,
+           uniform, acummulate);
+
+  normalize(histR, histR, 0, histImgR.rows, NORM_MINMAX, -1, Mat());
+  normalize(histG, histG, 0, histImgG.rows, NORM_MINMAX, -1, Mat());
+  normalize(histB, histB, 0, histImgB.rows, NORM_MINMAX, -1, Mat());
+
+  histImgR.setTo(Scalar(0));
+  histImgG.setTo(Scalar(0));
+  histImgB.setTo(Scalar(0));
+
+  for(int i=0; i&lt;nbins; i++){
+    line(histImgR,
+         Point(i, histh),
+         Point(i, histh-cvRound(histR.at&lt;float&gt;(i))),
+         Scalar(0, 0, 255), 1, 8, 0);
+    line(histImgG,
+         Point(i, histh),
+         Point(i, histh-cvRound(histG.at&lt;float&gt;(i))),
+         Scalar(0, 255, 0), 1, 8, 0);
+    line(histImgB,
+         Point(i, histh),
+         Point(i, histh-cvRound(histB.at&lt;float&gt;(i))),
+         Scalar(255, 0, 0), 1, 8, 0);
+  }
+  histImgR.copyTo(image(Rect(0, 0       ,nbins, histh)));
+  histImgG.copyTo(image(Rect(0, histh   ,nbins, histh)));
+  histImgB.copyTo(image(Rect(0, 2*histh ,nbins, histh)));
+}</code></pre>
 </div>
 </div>
 </div>
 <div class="sect3">
 <h4 id="_4_2_2_detecção_de_movimentos_da_webcam">4.2.2 Detecção de Movimentos da Webcam</h4>
+<div class="paragraph">
+<p>A realização da detecção de movimento é feita a partir da comparação do histograma de duas frames consecutivas, se houver mudança no histograma, houve movimentação.
+Para realizar a diferenciação dos histogramas foi utilizada o absoluto da diferença entre os dois histogramas e a função "threshold" do OpenCV , que caso a diferença seja maior que um limite,
+um valor pre-determinado é atribuido a intensidade do ponto. No caso, foi usado 255.
+Esta implementação para a experiência mostrou-se muito sensível a altas intensidades luminosas, tornando-se muito instável quanto a detecção de movimento.</p>
+</div>
+<div class="listingblock">
+<div class="title">Codigo para detecção de mudanças no histograma</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-C++ hljs" data-lang="C++">bool houveMudanca(Mat histAnt, Mat histAtu, int nbins){
+  int rows = histAnt.rows;
+  bool mudou = false;
+  float end= 0;
+  Mat diff;
+  if(rows&gt;0){
+    diff = abs(histAnt-histAtu);
+    //aplica o limite para a diferença ser considerada como movimentação; tipo do threshold escolhiodo foi o Binario.
+    threshold(diff,diff,4, 255, CV_THRESH_BINARY);
+  //  cout&lt;&lt;diff&lt;&lt;endl;
+    if(rows &gt; 0 ){
+      for(int i=0; i&lt;nbins; i++){
+        if(diff.at&lt;float&gt;(i)==255){
+          mudou= true;
+        }
+      }
+    }
+  }
+
+  return mudou;
+
+}</code></pre>
+</div>
+</div>
 <div class="listingblock">
 <div class="title">Codigo Final 4.2.2</div>
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-C++ hljs" data-lang="C++"></code></pre>
+<pre class="highlightjs highlight"><code class="language-C++ hljs" data-lang="C++">#include &lt;iostream&gt;
+#include &lt;opencv2/opencv.hpp&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;typeinfo&gt;
+#include &lt;unistd.h&gt;
+
+
+using namespace cv;
+using namespace std;
+
+bool houveMudanca(Mat histAnt, Mat histAtu, int nbins);
+
+int main(int argc, char** argv){
+  Mat image;
+  bool alterR,alterG,alterB;
+  int width, height;
+  VideoCapture cap;
+  vector&lt;Mat&gt; planes;
+  Mat histR, histG, histB;
+  Mat histR2, histG2, histB2;
+  int i =0;
+  int nbins = 64;
+  float range[] = {0, 256};
+  const float *histrange = { range };
+  bool uniform = true;
+  bool acummulate = false;
+
+  cap.open(0);
+
+  if(!cap.isOpened()){
+    cout &lt;&lt; "cameras indisponiveis";
+    return -1;
+  }
+
+  width  = cap.get(CV_CAP_PROP_FRAME_WIDTH);
+  height = cap.get(CV_CAP_PROP_FRAME_HEIGHT);
+
+  cout &lt;&lt; "largura = " &lt;&lt; width &lt;&lt; endl;
+  cout &lt;&lt; "altura  = " &lt;&lt; height &lt;&lt; endl;
+
+  int histw = nbins, histh = nbins/2;
+  Mat histImgR(histh, histw, CV_8UC3, Scalar(0,0,0));
+  Mat histImgG(histh, histw, CV_8UC3, Scalar(0,0,0));
+  Mat histImgB(histh, histw, CV_8UC3, Scalar(0,0,0));
+
+
+
+  while(1){
+    cap &gt;&gt; image;
+    split (image, planes);
+
+    calcHist(&amp;planes[0], 1, 0, Mat(), histR, 1,
+             &amp;nbins, &amp;histrange,
+             uniform, acummulate);
+    calcHist(&amp;planes[1], 1, 0, Mat(), histG, 1,
+             &amp;nbins, &amp;histrange,
+             uniform, acummulate);
+    calcHist(&amp;planes[2], 1, 0, Mat(), histB, 1,
+             &amp;nbins, &amp;histrange,
+             uniform, acummulate);
+
+
+    normalize(histR, histR, 0, histImgR.rows, NORM_MINMAX, -1, Mat());
+    normalize(histG, histG, 0, histImgG.rows, NORM_MINMAX, -1, Mat());
+    normalize(histB, histB, 0, histImgB.rows, NORM_MINMAX, -1, Mat());
+
+    alterR = houveMudanca(histR2, histR, nbins);
+    alterG = houveMudanca(histG2, histG, nbins);
+    alterB = houveMudanca(histB2, histB, nbins);
+
+    histR.copyTo(histR2);
+    histG.copyTo(histG2);
+    histB.copyTo(histB2);
+
+
+    if(alterR||alterG||alterB){
+      cout&lt;&lt;i++;
+      cout&lt;&lt;"Foi detectado movimento"&lt;&lt;endl;
+    }
+
+    alterR = false;
+    alterG = false;
+    alterB = false;
+
+    histImgR.setTo(Scalar(0));
+    histImgG.setTo(Scalar(0));
+    histImgB.setTo(Scalar(0));
+
+    for(int i=0; i&lt;nbins; i++){
+      line(histImgR,
+           Point(i, histh),
+           Point(i, histh-cvRound(histR.at&lt;float&gt;(i))),
+           Scalar(0, 0, 255), 1, 8, 0);
+      line(histImgG,
+           Point(i, histh),
+           Point(i, histh-cvRound(histG.at&lt;float&gt;(i))),
+           Scalar(0, 255, 0), 1, 8, 0);
+      line(histImgB,
+           Point(i, histh),
+           Point(i, histh-cvRound(histB.at&lt;float&gt;(i))),
+           Scalar(255, 0, 0), 1, 8, 0);
+    }
+    histImgR.copyTo(image(Rect(0, 0       ,nbins, histh)));
+    histImgG.copyTo(image(Rect(0, histh   ,nbins, histh)));
+    histImgB.copyTo(image(Rect(0, 2*histh ,nbins, histh)));
+    imshow("image", image);
+    usleep(500);
+    if(waitKey(30) &gt;= 0) break;
+  }
+  return 0;
+}
+
+bool houveMudanca(Mat histAnt, Mat histAtu, int nbins){
+  int rows = histAnt.rows;
+  bool mudou = false;
+  float end= 0;
+  Mat diff;
+  if(rows&gt;0){
+    diff = abs(histAnt-histAtu);
+    //aplica o limite para a diferença ser considerada como movimentação; tipo do threshold escolhiodo foi o Binario.
+    threshold(diff,diff,4, 255, CV_THRESH_BINARY);
+  //  cout&lt;&lt;diff&lt;&lt;endl;
+    if(rows &gt; 0 ){
+      for(int i=0; i&lt;nbins; i++){
+        if(diff.at&lt;float&gt;(i)==255){
+          mudou= true;
+        }
+      }
+    }
+  }
+
+  return mudou;
+
+}</code></pre>
 </div>
 </div>
 </div>
@@ -1241,7 +1505,7 @@ videoOutput.release();
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2018-04-02 21:57:29 -03
+Last updated 2018-04-05 15:43:08 -03
 </div>
 </div>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css">
