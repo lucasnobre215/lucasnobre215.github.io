@@ -1499,13 +1499,482 @@ videoOutput.release();
 </div>
 </div>
 </div>
+<div class="sect3">
+<h4 id="_7_2_filtro_homomorfico">7.2 Filtro Homomorfico</h4>
+<div class="paragraph">
+<p>Implementou-se um filtro Homomórfico partir da função a seguir:</p>
+</div>
+<div class="listingblock">
+<div class="title">Função para o filtro Homomórfico</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-C++ hljs" data-lang="C++">for(int i=0; i&lt;dft_M; i++){
+    for(int j=0; j&lt;dft_N; j++){
+      tmp.at&lt;float&gt; (i,j) = (gh - gl)*(1 - exp(-c*(( (i-dft_M/2)*(i-dft_M/2) + (j-dft_N/2)*(j-dft_N/2) ) / (d0*d0) ))) + gl;
+    }
+  }</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>O objetivo desse filtro é corrigir a iluminação em cenas mal iluminadas. Obteve-se o seguinte resultado</p>
+</div>
+<div id="ImagemPolvoOriginal" class="imageblock">
+<div class="content">
+<img src="imagens/unidade2/homomorfico/polvoOriginal.png" alt="polvoOriginal">
+</div>
+<div class="title">Figure 13. Imagem Polvo Original</div>
+</div>
+<div id="ImagemPolvoProcessada" class="imageblock">
+<div class="content">
+<img src="imagens/unidade2/homomorfico/polvoFiltrado.png" alt="polvoFiltrado">
+</div>
+<div class="title">Figure 14. Imagem Polvo Processada</div>
+</div>
+<div class="listingblock">
+<div class="title">Codigo Final 7.2</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-C++ hljs" data-lang="C++">#include &lt;iostream&gt;
+#include &lt;opencv2/opencv.hpp&gt;
+#include &lt;opencv2/imgproc/imgproc.hpp&gt;
+
+#define RADIUS 20
+
+using namespace cv;
+using namespace std;
+
+// troca os quadrantes da imagem da DFT
+void deslocaDFT(Mat&amp; image ){
+  Mat tmp, A, B, C, D;
+
+  // se a imagem tiver tamanho impar, recorta a regiao para
+  // evitar cÃ³pias de tamanho desigual
+  image = image(Rect(0, 0, image.cols &amp; -2, image.rows &amp; -2));
+  int cx = image.cols/2;
+  int cy = image.rows/2;
+
+  // reorganiza os quadrantes da transformada
+  // A B   -&gt;  D C
+  // C D       B A
+  A = image(Rect(0, 0, cx, cy));
+  B = image(Rect(cx, 0, cx, cy));
+  C = image(Rect(0, cy, cx, cy));
+  D = image(Rect(cx, cy, cx, cy));
+
+  // A &lt;-&gt; D
+  A.copyTo(tmp);  D.copyTo(A);  tmp.copyTo(D);
+
+  // C &lt;-&gt; B
+  C.copyTo(tmp);  B.copyTo(C);  tmp.copyTo(B);
+}
+
+
+
+int main(int , char**){
+  VideoCapture cap;
+  Mat imaginaryInput, complexImage, multsp;
+  Mat padded, filter, mag;
+  Mat image, imagegray, tmp;
+  Mat_&lt;float&gt; realInput, zeros;
+  vector&lt;Mat&gt; planos;
+
+  // guarda tecla capturada
+  char key;
+  float gh, gl, d0, c;
+  // valores ideais dos tamanhos da imagem
+  // para calculo da DFT
+  int dft_M, dft_N;
+
+  // abre a cÃ¢mera default
+  cap.open(0);
+  if(!cap.isOpened())
+    return -1;
+
+  // captura uma imagem para recuperar as
+  // informacoes de gravaÃ§Ã£o
+  cap &gt;&gt; image;
+
+  // identifica os tamanhos otimos para
+  // calculo do FFT
+  dft_M = getOptimalDFTSize(image.rows);
+  dft_N = getOptimalDFTSize(image.cols);
+
+  // realiza o padding da imagem
+  copyMakeBorder(image, padded, 0,
+                 dft_M - image.rows, 0,
+                 dft_N - image.cols,
+                 BORDER_CONSTANT, Scalar::all(0));
+
+  // parte imaginaria da matriz complexa (preenchida com zeros)
+  zeros = Mat_&lt;float&gt;::zeros(padded.size());
+
+  // prepara a matriz complexa para ser preenchida
+  complexImage = Mat(padded.size(), CV_32FC2, Scalar(0));
+
+  // a funÃ§Ã£o de transferÃªncia (filtro frequencial) deve ter o
+  // mesmo tamanho e tipo da matriz complexa
+  filter = complexImage.clone();
+
+  // cria uma matriz temporÃ¡ria para criar as componentes real
+  // e imaginaria do filtro ideal
+  tmp = Mat(dft_M, dft_N, CV_32F);
+
+
+  gh = 5;
+  gl = 5;
+  d0 = 10;
+  c  = 10;
+
+
+
+  // cria a matriz com as componentes do filtro e junta
+  // ambas em uma matriz multicanal complexa
+
+
+  for(;;){
+    // prepara o filtro homomorfico
+    for(int i=0; i&lt;dft_M; i++){
+      for(int j=0; j&lt;dft_N; j++){
+        tmp.at&lt;float&gt; (i,j) = (gh - gl)*(1 - exp(-c*(( (i-dft_M/2)*(i-dft_M/2) + (j-dft_N/2)*(j-dft_N/2) ) / (d0*d0) ))) + gl;
+      }
+    }
+    Mat comps[]= {tmp, tmp};
+    merge(comps, 2, filter);
+    cap &gt;&gt; image;
+    cvtColor(image, imagegray, CV_BGR2GRAY);
+    imshow("original", imagegray);
+
+    // realiza o padding da imagem
+    copyMakeBorder(imagegray, padded, 0,
+                   dft_M - image.rows, 0,
+                   dft_N - image.cols,
+                   BORDER_CONSTANT, Scalar::all(0));
+
+    // limpa o array de matrizes que vao compor a
+    // imagem complexa
+    planos.clear();
+    // cria a compoente real
+    realInput = Mat_&lt;float&gt;(padded);
+    // insere as duas componentes no array de matrizes
+    planos.push_back(realInput);
+    planos.push_back(zeros);
+
+    // combina o array de matrizes em uma unica
+    // componente complexa
+    merge(planos, complexImage);
+
+    // calcula o dft
+    dft(complexImage, complexImage);
+
+    // realiza a troca de quadrantes
+    deslocaDFT(complexImage);
+
+    // aplica o filtro frequencial
+    mulSpectrums(complexImage,filter,complexImage,0);
+
+    // limpa o array de planos
+    planos.clear();
+    // separa as partes real e imaginaria para modifica-las
+    split(complexImage, planos);
+
+    // recompoe os planos em uma unica matriz complexa
+    merge(planos, complexImage);
+
+    // troca novamente os quadrantes
+    deslocaDFT(complexImage);
+
+	 //cout &lt;&lt; complexImage.size().height &lt;&lt; endl;
+    // calcula a DFT inversa
+    idft(complexImage, complexImage);
+
+    // limpa o array de planos
+    planos.clear();
+
+    // separa as partes real e imaginaria da
+    // imagem filtrada
+    split(complexImage, planos);
+
+    // normaliza a parte real para exibicao
+    normalize(planos[0], planos[0], 0, 1, CV_MINMAX);
+    imshow("filtrada", planos[0]);
+
+    key = (char) waitKey(10);
+    if( key == 27 ) break; // esc pressed!
+    switch(key){
+      case 'q':
+        gh+=0.1;
+
+        break;
+      case 'a':
+        gh-=0.1;
+
+        break;
+      case 'w':
+        gl+=0.1;
+
+        break;
+      case 's':
+        gl-=0.1;
+
+        break;
+      case 'r':
+        d0+=0.1;
+
+        break;
+      case 'f':
+        d0-=0.1;
+
+        break;
+      case 'e':
+        c+=0.1;
+
+        break;
+      case 'd':
+        c-=0.1;
+        break;
+    }
+
+    cout &lt;&lt; "gh: " &lt;&lt; gh &lt;&lt; " gl: " &lt;&lt; gl &lt;&lt; " c: " &lt;&lt; c &lt;&lt; " Do: " &lt;&lt; d0&lt;&lt; "" &lt;&lt; endl;
+  }
+
+  return 0;
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_8_3_pontilhismo">8.3 Pontilhismo</h4>
+<div class="paragraph">
+<p>O efeito de pontilhismo foi dado a partir da utilização dos pontos obtidos pelo metodo de Canny combinado com a inserção de pontos com as cores da imagem original de tamanhos aleatórios, numa ordem aleatória.</p>
+</div>
+<div class="paragraph">
+<p>Obteve-se o seguinte resultado:</p>
+</div>
+<div id="TorontoOriginal" class="imageblock">
+<div class="content">
+<img src="imagens/unidade2/pontilhismo/toronto.jpg" alt="toronto">
+</div>
+<div class="title">Figure 15. Imagem da SkyLine de Toronto</div>
+</div>
+<div id="TorontoPontilhismo" class="imageblock">
+<div class="content">
+<img src="imagens/unidade2/pontilhismo/torontoPontilhismo.jpg" alt="torontoPontilhismo">
+</div>
+<div class="title">Figure 16. Imagem da SkyLine de Toronto em Técnica Pontilhismo</div>
+</div>
+<div class="listingblock">
+<div class="title">Codigo Final 8.3</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-C++ hljs" data-lang="C++">#include &lt;iostream&gt;
+#include &lt;opencv2/opencv.hpp&gt;
+#include &lt;fstream&gt;
+#include &lt;iomanip&gt;
+#include &lt;vector&gt;
+#include &lt;algorithm&gt;
+#include &lt;numeric&gt;
+#include &lt;ctime&gt;
+#include &lt;cstdlib&gt;
+
+using namespace std;
+using namespace cv;
+
+int top_slider = 10;
+int top_slider_max = 200;
+
+int step=5;
+int jitter=3;
+int raio=3;
+int raioM=3;
+
+#define STEP_MAX 20
+#define JITTER_MAX 10
+#define RAIO_MAX 10
+
+Mat image, border, points,pointsCani;
+
+void on_trackbar_canny(int, void*){
+
+    vector&lt;int&gt; yrange;
+    vector&lt;int&gt; xrange;
+
+    Vec3b cor;
+    int width, height;
+    int x, y;
+
+  width=image.size().width;
+  height=image.size().height;
+  Canny(image, border, top_slider, 3*top_slider);
+  imshow("canny213", border);
+
+  if(step &lt; 1) step = 1;
+    if(jitter &lt; 1) jitter = 1;
+    if(raio &lt; 1) raio = 1;
+
+  xrange.resize(height/step);
+  yrange.resize(width/step);
+
+  iota(xrange.begin(), xrange.end(), 0);
+  iota(yrange.begin(), yrange.end(), 0);
+
+  for(uint i=0; i&lt;xrange.size(); i++){
+    xrange[i]= xrange[i]*step+step/2;
+  }
+
+  for(uint i=0; i&lt;yrange.size(); i++){
+    yrange[i]= yrange[i]*step+step/2;
+  }
+
+  pointsCani = Mat(height, width, CV_8UC3, Scalar(255, 255, 255));
+
+  points = Mat(height, width, CV_8UC3, Scalar(255, 255, 255));
+
+  for(int i=0; i&lt;height; i++ ){
+        for(int j=0; j&lt;width; j++){
+           if(border.at&lt;uchar&gt;(i,j)&gt;0){
+              circle(points,
+                     cv::Point(j,i),
+                     raioM,
+                     CV_RGB(cor[0],cor[1],cor[2]),
+                     -1,
+                     CV_AA);
+         }
+      }
+   }
+   random_shuffle(xrange.begin(), xrange.end());
+   for(auto i : xrange){
+     random_shuffle(yrange.begin(), yrange.end());
+     for(auto j : yrange){
+       x = i+rand()%(2*jitter)-jitter+1;
+       y = j+rand()%(2*jitter)-jitter+1;
+
+       cor[0] = (int)(image.at&lt;Vec3b&gt;(i,j)[2]);
+       cor[1] = (int)(image.at&lt;Vec3b&gt;(i,j)[1]);
+       cor[2] = (int)(image.at&lt;Vec3b&gt;(i,j)[0]);
+       raio = rand()%raioM;
+       circle(points,
+              cv::Point(y,x),
+              raio,
+              CV_RGB(cor[0],cor[1],cor[2]),
+              -1,
+              CV_AA);
+     }
+   }
+   imshow("canny", points);
+  imwrite("canny.jpg", points);
+}
+
+int main(int argc, char**argv){
+
+image= imread(argv[1],CV_LOAD_IMAGE_COLOR);
+namedWindow("canny",1);
+namedWindow("canny213",1);
+ createTrackbar( "Threshold inferior", "canny",
+               &amp;top_slider,
+               top_slider_max,
+               on_trackbar_canny );
+
+ createTrackbar( "Raio", "canny",
+                 &amp;raioM,
+                 RAIO_MAX,
+                 on_trackbar_canny );
+
+ createTrackbar( "Jitter", "canny",
+                 &amp;jitter,
+                 JITTER_MAX,
+                 on_trackbar_canny );
+
+ createTrackbar( "passo", "canny",
+                 &amp;step,
+                 STEP_MAX,
+                 on_trackbar_canny );
+
+  on_trackbar_canny(top_slider, 0 );
+
+  waitKey();
+  imwrite("resultado.jpg", points);
+  return 0;
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_9_2_k_means">9.2 K-Means</h4>
+<div class="paragraph">
+<p>Após trocar o parametro "flags" para "KMEANS_RANDOM_CENTERS" pode-se notar algumas diferenças na clusterização, uma vez que o parametro anterior ("KMEANS_PP_CENTERS") escolhia os centros baseados em um algoritmo, enquanto o parametro "KMEANS_RANDOM_CENTERS" escolhe aleatoriamente os centros dos clusters. resultando nas imagens a seguir
+A maior diferença que é mostrada, acontece na 7ª tentativa (<a href="#tentativa7">Imagem da SkyLine de Toronto Clusterizada. Tentativa #7</a>).</p>
+</div>
+<div id="TorontoOriginal1" class="imageblock">
+<div class="content">
+<img src="imagens/unidade2/kmeans/toronto.jpg" alt="toronto">
+</div>
+<div class="title">Figure 17. Imagem da SkyLine de Toronto</div>
+</div>
+<div id="tentativa1" class="imageblock">
+<div class="content">
+<img src="imagens/unidade2/kmeans/torontoKmeans1.jpg" alt="torontoKmeans1">
+</div>
+<div class="title">Figure 18. Imagem da SkyLine de Toronto Clusterizada. Tentativa #1</div>
+</div>
+<div id="tentativa2" class="imageblock">
+<div class="content">
+<img src="imagens/unidade2/kmeans/orontoKmeans1.jpg" alt="orontoKmeans1">
+</div>
+<div class="title">Figure 19. Imagem da SkyLine de Toronto Clusterizada. Tentativa #2</div>
+</div>
+<div id="tentativa3" class="imageblock">
+<div class="content">
+<img src="imagens/unidade2/kmeans/rontoKmeans1.jpg" alt="rontoKmeans1">
+</div>
+<div class="title">Figure 20. Imagem da SkyLine de Toronto Clusterizada. Tentativa #3</div>
+</div>
+<div id="tentativa4" class="imageblock">
+<div class="content">
+<img src="imagens/unidade2/kmeans/ontoKmeans1.jpg" alt="ontoKmeans1">
+</div>
+<div class="title">Figure 21. Imagem da SkyLine de Toronto Clusterizada. Tentativa #4</div>
+</div>
+<div id="tentativa5" class="imageblock">
+<div class="content">
+<img src="imagens/unidade2/kmeans/ntoKmeans1.jpg" alt="ntoKmeans1">
+</div>
+<div class="title">Figure 22. Imagem da SkyLine de Toronto Clusterizada. Tentativa #5</div>
+</div>
+<div id="tentativa6" class="imageblock">
+<div class="content">
+<img src="imagens/unidade2/kmeans/toKmeans1.jpg" alt="toKmeans1">
+</div>
+<div class="title">Figure 23. Imagem da SkyLine de Toronto Clusterizada. Tentativa #6</div>
+</div>
+<div id="tentativa7" class="imageblock">
+<div class="content">
+<img src="imagens/unidade2/kmeans/oKmeans1.jpg" alt="oKmeans1">
+</div>
+<div class="title">Figure 24. Imagem da SkyLine de Toronto Clusterizada. Tentativa #7</div>
+</div>
+<div id="tentativa8" class="imageblock">
+<div class="content">
+<img src="imagens/unidade2/kmeans/Kmeans1.jpg" alt="Kmeans1">
+</div>
+<div class="title">Figure 25. Imagem da SkyLine de Toronto Clusterizada. Tentativa #8</div>
+</div>
+<div id="tentativa9" class="imageblock">
+<div class="content">
+<img src="imagens/unidade2/kmeans/means1.jpg" alt="means1">
+</div>
+<div class="title">Figure 26. Imagem da SkyLine de Toronto Clusterizada. Tentativa #9</div>
+</div>
+<div id="tentativa10" class="imageblock">
+<div class="content">
+<img src="imagens/unidade2/kmeans/eans1.jpg" alt="eans1">
+</div>
+<div class="title">Figure 27. Imagem da SkyLine de Toronto Clusterizada. Tentativa #10</div>
+</div>
+</div>
 </div>
 </div>
 </div>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2018-04-05 15:43:08 -03
+Last updated 2018-05-14 21:30:43 -03
 </div>
 </div>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css">
